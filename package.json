@@ -1,0 +1,29 @@
+{
+  "name": "mavka",
+  "version": "0.125.10",
+  "description": "Мавка для JavaScript",
+  "license": "MIT",
+  "author": "OM",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "dist:esm": "esbuild src/index.ts --bundle --format=esm --outfile=dist/mavka.js",
+    "dist:worker": "esbuild web/mavka_worker.ts --bundle --outfile=dist/mavka_worker.js",
+    "dist": "npm run dist:esm && npm run dist:worker",
+    "buildforpublish:src": "tsc --module esnext --allowImportingTsExtensions --rewriteRelativeImportExtensions src/*.ts --outDir buildforpublish/src",
+    "buildforpublish:bin": "tsc --module esnext --types node --allowImportingTsExtensions --rewriteRelativeImportExtensions bin/mavka.ts --outDir buildforpublish"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "mavka": "bin/mavka.js"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "esbuild": "^0.28.1",
+    "prettier": "3.8.5",
+    "typescript": "^6.0.3"
+  },
+  "mavkaVersion": "0.125.7"
+}
