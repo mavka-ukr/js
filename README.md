@@ -6,7 +6,9 @@
 
 ```shell
 npm i -g mavka
+```
 
+```shell
 mavka
 ```
 
