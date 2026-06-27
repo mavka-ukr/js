@@ -67,19 +67,23 @@ const mbib = new WebMavkaBib();
 
 const mw = new MavkaWASM(mfs, mproc, mbib);
 
-fetch(`./мавка-${pkg.mavkaVersion}.wasm`)
-  .then((r) => r.arrayBuffer())
-  .then((buffer) => mw.instantiate(buffer))
-  .then(() => {
-    self.postMessage({ type: "MAVKA_READY" });
-  });
-
 self.onmessage = (event) => {
   const eventData = event.data;
 
   if (eventData && typeof eventData === "object") {
     const type = eventData.type;
     const id = eventData.id;
+
+    if (type === "INIT") {
+      const mavkaWebUrl = eventData.mavkaWebUrl || "https://веб.мавка.укр";
+
+      fetch(`${mavkaWebUrl}/версії/мавка-${pkg.mavkaVersion}.wasm`)
+        .then((r) => r.arrayBuffer())
+        .then((buffer) => mw.instantiate(buffer))
+        .then(() => {
+          self.postMessage({ type: "MAVKA_READY" });
+        });
+    }
 
     if (type === "WRITE") {
       const path = eventData.path;
