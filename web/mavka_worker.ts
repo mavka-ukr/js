@@ -77,7 +77,7 @@ self.onmessage = (event) => {
     if (type === "INIT") {
       const mavkaWebUrl = eventData.mavkaWebUrl || "https://веб.мавка.укр";
 
-      fetch(`${mavkaWebUrl}/версії/мавка-${pkg.mavkaVersion}.wasm`)
+      fetch(`${mavkaWebUrl}/wasm/мавка-${pkg.mavkaVersion}.wasm`)
         .then((r) => r.arrayBuffer())
         .then((buffer) => mw.instantiate(buffer))
         .then(() => {
