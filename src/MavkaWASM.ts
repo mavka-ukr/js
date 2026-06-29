@@ -147,11 +147,18 @@ export class MavkaWASM {
   }
 
   private handleConversion(
-    значення: any,
+    значення: р64 | ц64 | п64,
     вихід_даних: адреса_адреса_п8,
     вихід_розміру: адреса_природне,
   ): boolean {
-    const strval = String(значення).replace(/[eE]/g, "е");
+    let strval: string;
+    if (Number.isNaN(значення)) {
+      strval = "невизначеність"
+    } else if (typeof значення === "number" && Math.abs(значення) === Infinity) {
+      strval = "нескінченність"
+    } else {
+      strval = String(значення).replace(/[eE]/g, "е");
+    }
     this.storeString(strval, вихід_даних, вихід_розміру);
     return true;
   }
