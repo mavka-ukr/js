@@ -1,6 +1,6 @@
 {
   "name": "mavka",
-  "version": "0.125.13",
+  "version": "0.126.0",
   "description": "Мавка для JavaScript",
   "license": "MIT",
   "author": "OM",
@@ -25,5 +25,5 @@
     "prettier": "3.8.5",
     "typescript": "^6.0.3"
   },
-  "mavkaVersion": "0.125.9"
+  "mavkaVersion": "0.126.0"
 }
