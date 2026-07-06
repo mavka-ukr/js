@@ -7,11 +7,13 @@ type адреса_п8 = bigint;
 type адреса_адреса_п8 = bigint;
 type адреса_природне = bigint;
 type адреса_ціле = bigint;
+type адреса_р64 = bigint;
 type природне = bigint;
 type р64 = number;
 type ц64 = bigint;
 type п64 = bigint;
 type ц32 = number;
+type логічне = number;
 
 export class MavkaWASM {
   public fs: MavkaFS;
@@ -105,6 +107,15 @@ export class MavkaWASM {
 
   storeU64(value: bigint, ptr: bigint): void {
     const wasmMemoryView = new BigUint64Array(
+      this.getMemoryBuffer(),
+      Number(ptr),
+      1,
+    );
+    wasmMemoryView[0] = value;
+  }
+
+  storeNumber(value: number, ptr: bigint) {
+    const wasmMemoryView = new Float64Array(
       this.getMemoryBuffer(),
       Number(ptr),
       1,
@@ -235,6 +246,17 @@ export class MavkaWASM {
       ) => {
         return this.handleConversion(значення, вихід_даних, вихід_розміру);
       },
+      пристрій_мавки_отримати_р64_з_ю8: (дані: адреса_п8, розмір: природне, вихід: адреса_р64): логічне => {
+        const value = this.extractString(дані, розмір).replaceAll("е", "e").replaceAll("Е", "E");
+
+        try {
+          this.storeNumber(parseFloat(value), вихід);
+        } catch (e) {
+          return 0;
+        }
+
+        return 1;
+      },
       пристрій_мавки_перетворити_ц64_в_ю8: (
         значення: ц64,
         вихід_даних: адреса_адреса_п8,
@@ -301,6 +323,21 @@ export class MavkaWASM {
         this.storeString(cwd, вихід_даних, вихід_розміру);
         return true;
       },
+      бібліотека_мавки_синус_р64: (значення: р64): р64 => { return Math.sin(значення); },
+      бібліотека_мавки_косинус_р64: (значення: р64): р64 => { return Math.cos(значення); },
+      бібліотека_мавки_тангенс_р64: (значення: р64): р64 => { return Math.tan(значення); },
+      бібліотека_мавки_арксинус_р64: (значення: р64): р64 => { return Math.asin(значення); },
+      бібліотека_мавки_арккосинус_р64: (значення: р64): р64 => { return Math.acos(значення); },
+      бібліотека_мавки_арктангенс_р64: (значення: р64): р64 => { return Math.atan(значення); },
+      бібліотека_мавки_абсолютне_р64: (значення: р64): р64 => { return Math.abs(значення); },
+      бібліотека_мавки_експонента_р64: (значення: р64): р64 => { return Math.exp(значення); },
+      бібліотека_мавки_корінь2_р64: (значення: р64): р64 => { return Math.sqrt(значення); },
+      бібліотека_мавки_стеля_р64: (значення: р64): р64 => { return Math.ceil(значення); },
+      бібліотека_мавки_підлога_р64: (значення: р64): р64 => { return Math.floor(значення); },
+      бібліотека_мавки_округлити_р64: (значення: р64): р64 => { return Math.round(значення); },
+      бібліотека_мавки_лог_р64: (значення: р64): р64 => { return Math.log(значення); },
+      бібліотека_мавки_лог2_р64: (значення: р64): р64 => { return Math.log2(значення); },
+      бібліотека_мавки_лог10_р64: (значення: р64): р64 => { return Math.log10(значення); },
     } as const;
 
     const { instance } = await WebAssembly.instantiate(wasmBuffer, {
