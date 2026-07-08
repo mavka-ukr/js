@@ -71,6 +71,14 @@ export class MavkaWASM {
     return this.utf8Decoder.decode(byteBuffer);
   }
 
+  extractBytes(dataPtr: bigint, size: bigint): Uint8Array {
+    return new Uint8Array(
+      this.getMemoryBuffer(),
+      Number(dataPtr),
+      Number(size),
+    );
+  }
+
   sharePtrs(ptrs: bigint[]): [bigint, bigint] {
     const elementCount = ptrs.length;
     const byteSize = BigInt(elementCount * 8);
@@ -101,6 +109,22 @@ export class MavkaWASM {
 
     wasmMemoryView.set(encodedString);
     wasmMemoryView[Number(size)] = 0;
+
+    return [ptr, size];
+  }
+
+  shareBytes(data: Uint8Array): [bigint, bigint] {
+    const size = BigInt(data.length);
+
+    const ptr = this.malloc(size);
+
+    const wasmMemoryView = new Uint8Array(
+      this.getMemoryBuffer(),
+      Number(ptr),
+      Number(size),
+    );
+
+    wasmMemoryView.set(data);
 
     return [ptr, size];
   }
@@ -338,6 +362,54 @@ export class MavkaWASM {
       бібліотека_мавки_лог_р64: (значення: р64): р64 => { return Math.log(значення); },
       бібліотека_мавки_лог2_р64: (значення: р64): р64 => { return Math.log2(значення); },
       бібліотека_мавки_лог10_р64: (значення: р64): р64 => { return Math.log10(значення); },
+      бібліотека_мавки_афс_видалити: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
+        const path = this.extractString(дані_шляху, розмір_шляху);
+        const callback = this.mapFn<(видалено: природне, помилка: природне, аргумент: адреса) => void>(обробник);
+
+        this.fs.delete(path, (result, error) => {
+          callback(result ? 1n : 0n, BigInt(error), аргумент);
+        });
+      },
+      бібліотека_мавки_афс_дописати: (дані_шляху: адреса_п8, розмір_шляху: природне, дані_даних: адреса_п8, розмір_даних: природне, обробник: адреса, аргумент: адреса) => {
+        const path = this.extractString(дані_шляху, розмір_шляху);
+        const data = this.extractBytes(дані_даних, розмір_даних);
+        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
+
+        this.fs.append(path, data, (error) => {
+          callback(BigInt(error), аргумент);
+        });
+      },
+      бібліотека_мавки_афс_записати: (дані_шляху: адреса_п8, розмір_шляху: природне, дані_даних: адреса_п8, розмір_даних: природне, обробник: адреса, аргумент: адреса) => {
+        const path = this.extractString(дані_шляху, розмір_шляху);
+        const data = this.extractBytes(дані_даних, розмір_даних);
+        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
+
+        this.fs.write(path, data, (error) => {
+          callback(BigInt(error), аргумент);
+        });
+      },
+      бібліотека_мавки_афс_прочитати: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
+        const path = this.extractString(дані_шляху, розмір_шляху);
+        const callback = this.mapFn<(дані_даних: адреса_п8, розмір_даних: природне, помилка: природне, аргумент: адреса) => void>(обробник);
+
+        this.fs.read(path, (data, error) => {
+          if (error) {
+            callback(0n, 0n, BigInt(error), аргумент);
+          } else {
+            const [ptr, size] = this.shareBytes(data);
+
+            callback(ptr, size, BigInt(error), аргумент);
+          }
+        });
+      },
+      бібліотека_мавки_афс_створити_папку: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
+        const path = this.extractString(дані_шляху, розмір_шляху);
+        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
+
+        this.fs.mkdir(path, (error) => {
+          callback(BigInt(error), аргумент);
+        });
+      },
     } as const;
 
     const { instance } = await WebAssembly.instantiate(wasmBuffer, {
