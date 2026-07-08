@@ -31,8 +31,14 @@ export class NodeMavkaFS extends MavkaFS {
   }
 
   public delete(path: string, callback: (result: boolean, error: number) => void): void {
-    this.node.fs.rm(path, { recursive: true, force: true }, (err: any) => {
-      callback(!err, err ? 1 : 0);
+    this.node.fs.rm(path, { recursive: true }, (err: any) => {
+      if (!err) {
+        callback(true, 0);
+      } else if (err.code === "ENOENT") {
+        callback(false, 0);
+      } else {
+        callback(false, 1);
+      }
     });
   }
 

@@ -49,7 +49,7 @@ export class InMemoryMavkaFS extends MavkaFS {
       this.files.delete(absolutePath);
       callback(true, 0);
     } else {
-      callback(false, 1);
+      callback(false, 0);
     }
   }
 
