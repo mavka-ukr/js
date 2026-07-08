@@ -1,5 +1,4 @@
 export * from "./InMemoryMavkaFS.ts";
-export * from "./LocalStorageMavkaFS.ts";
 export * from "./MavkaBib.ts";
 export * from "./MavkaFS.ts";
 export * from "./MavkaProcess.ts";
@@ -7,3 +6,4 @@ export * from "./MavkaWASM.ts";
 export * from "./Node.ts";
 export * from "./NodeMavkaFS.ts";
 export * from "./NodeMavkaProcess.ts";
+
