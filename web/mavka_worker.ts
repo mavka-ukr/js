@@ -67,6 +67,8 @@ const mbib = new WebMavkaBib();
 
 const mw = new MavkaWASM(mfs, mproc, mbib);
 
+let running: { id: number, callbacksCount: number } | null = null;
+
 self.onmessage = (event) => {
   const eventData = event.data;
 
@@ -118,9 +120,17 @@ self.onmessage = (event) => {
     }
 
     if (type === "RUN") {
+      if (running) {
+        console.warn("Already running!");
+        return;
+      }
+
+      running = { id, callbacksCount: 0 };
+
       const args = eventData.args;
 
       let resultCode: number = 0;
+      let error: string | null = null;
 
       try {
         resultCode = mw.run([
@@ -133,17 +143,49 @@ self.onmessage = (event) => {
         } else {
           resultCode = 1;
         }
+
+        error = String(e);
       }
 
-      self.postMessage({ type: "RUN_RESULT", id, resultCode });
+      if (resultCode !== 0 || running.callbacksCount === 0) {
+        running = null;
+
+        self.postMessage({ type: "RUN_RESULT", id, resultCode, error });
+      }
     }
 
     if (type === "READLINE_RESULT") {
+      if (!running) {
+        console.warn("Not running!");
+        return;
+      }
+
+      running.callbacksCount--;
+
       const value = eventData.value;
 
       const l = listeners.get(id);
 
-      l(value);
+      let resultCode: number = 0;
+      let error: string | null = null;
+
+      try {
+        l(value);
+      } catch (e) {
+        if (e && e instanceof ExitMavkaException) {
+          resultCode = e.exitCode;
+        } else {
+          resultCode = 1;
+        }
+
+        error = String(e);
+      }
+
+      if (resultCode !== 0 || running.callbacksCount === 0) {
+        running = null;
+
+        self.postMessage({ type: "RUN_RESULT", id, resultCode, error });
+      }
     }
   }
 };
