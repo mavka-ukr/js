@@ -153,9 +153,9 @@ self.onmessage = (event) => {
       }
 
       if (resultCode !== 0 || running.callbacksCount === 0) {
-        running = null;
+        self.postMessage({ type: "RUN_RESULT", id: running.id, resultCode, error });
 
-        self.postMessage({ type: "RUN_RESULT", id, resultCode, error });
+        running = null;
       }
     }
 
@@ -187,9 +187,9 @@ self.onmessage = (event) => {
       }
 
       if (resultCode !== 0 || running.callbacksCount === 0) {
-        running = null;
+        self.postMessage({ type: "RUN_RESULT", id: running.id, resultCode, error });
 
-        self.postMessage({ type: "RUN_RESULT", id, resultCode, error });
+        running = null;
       }
     }
   }
