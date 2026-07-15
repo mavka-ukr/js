@@ -21,6 +21,7 @@ const COLORS_MAP = {
 
 let eid = 0;
 const listeners = new Map();
+let running: { id: number, callbacksCount: number } | null = null;
 
 class WebMavkaProcess extends MavkaProcess {
   constructor() {
@@ -39,6 +40,12 @@ class WebMavkaProcess extends MavkaProcess {
     callback: TMavkaProcessReadlineCallback,
     prefix?: string,
   ): void {
+    if (!running) {
+      return;
+    }
+
+    running.callbacksCount++;
+
     const id = eid++;
 
     self.postMessage({ type: "READLINE", id, prefix });
@@ -66,8 +73,6 @@ const mproc = new WebMavkaProcess();
 const mbib = new WebMavkaBib();
 
 const mw = new MavkaWASM(mfs, mproc, mbib);
-
-let running: { id: number, callbacksCount: number } | null = null;
 
 self.onmessage = (event) => {
   const eventData = event.data;
