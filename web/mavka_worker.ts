@@ -130,6 +130,8 @@ self.onmessage = (event) => {
       } catch (e) {
         if (e && e instanceof ExitMavkaException) {
           resultCode = e.exitCode;
+        } else {
+          resultCode = 1;
         }
       }
 
