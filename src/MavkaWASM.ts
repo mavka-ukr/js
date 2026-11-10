@@ -2,18 +2,17 @@ import { MavkaBib } from "./MavkaBib.ts";
 import { MavkaFS } from "./MavkaFS.ts";
 import { MavkaProcess, type TMavkaColor } from "./MavkaProcess.ts";
 
-type адреса = bigint;
-type адреса_п8 = bigint;
-type адреса_адреса_п8 = bigint;
-type адреса_природне = bigint;
-type адреса_ціле = bigint;
-type адреса_р64 = bigint;
-type природне = bigint;
-type р64 = number;
-type ц64 = bigint;
-type п64 = bigint;
-type ц32 = number;
-type логічне = number;
+type size_t = bigint;
+type ssize_t = bigint;
+type double = number;
+type bool = number;
+type char = number;
+type int = number;
+type PristriyMavkyWriteToStdoutColor = number;
+type ptr<T> = bigint;
+const NULL = 0n;
+const TRUE = 1;
+const FALSE = 0;
 
 export class MavkaWASM {
   public fs: MavkaFS;
@@ -51,15 +50,15 @@ export class MavkaWASM {
   }
 
   malloc(size: bigint): bigint {
-    return this.getExports().пристрій_мавки_виділити(size);
+    return this.getExports().pristriy_mavky_malloc(size);
   }
 
   realloc(value: bigint, size: bigint): bigint {
-    return this.getExports().пристрій_мавки_перевиділити(value, size);
+    return this.getExports().pristriy_mavky_realloc(value, size);
   }
 
   free(value: bigint): void {
-    this.getExports().пристрій_мавки_звільнити(value);
+    this.getExports().pristriy_mavky_free(value);
   }
 
   extractString(dataPtr: bigint, size: bigint): string {
@@ -147,6 +146,15 @@ export class MavkaWASM {
     wasmMemoryView[0] = value;
   }
 
+  storeInt(value: int, ptr: bigint) {
+    const wasmMemoryView = new Int32Array(
+      this.getMemoryBuffer(),
+      Number(ptr),
+      1,
+    );
+    wasmMemoryView[0] = value;
+  }
+
   storePtr(value: bigint, ptr: bigint): void {
     this.storeU64(value, ptr);
   }
@@ -182,15 +190,18 @@ export class MavkaWASM {
   }
 
   private handleConversion(
-    значення: р64 | ц64 | п64,
-    вихід_даних: адреса_адреса_п8,
-    вихід_розміру: адреса_природне,
+    значення: double | ssize_t | size_t,
+    вихід_даних: ptr<ptr<char>>,
+    вихід_розміру: ptr<size_t>,
   ): boolean {
     let strval: string;
     if (Number.isNaN(значення)) {
-      strval = "невизначеність"
-    } else if (typeof значення === "number" && Math.abs(значення) === Infinity) {
-      strval = "нескінченність"
+      strval = "невизначеність";
+    } else if (
+      typeof значення === "number" &&
+      Math.abs(значення) === Infinity
+    ) {
+      strval = "нескінченність";
     } else {
       strval = String(значення).replace(/[eE]/g, "е");
     }
@@ -205,210 +216,241 @@ export class MavkaWASM {
 
     const env = {
       fmod: (a: number, b: number) => a % b,
-      пристрій_мавки_читати_ю8: (
-        дані_перед: адреса_п8,
-        розмір_перед: природне,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-        вихід_кінець_файлу: адреса_природне,
-        дозволити_історію: природне,
-      ) => {
-        return false;
+
+      pristriy_mavky_write_to_stdout: (data: ptr<char>, size: size_t): void => {
+        this.process.print(this.extractString(data, size), 0);
       },
-      пристрій_мавки_читати_ю8_асинхронно: (
-        дані_перед: адреса_п8,
-        розмір_перед: природне,
-        обробник: адреса,
-        аргумент: адреса,
-        дозволити_історію: природне,
-      ) => {
-        const prefix = this.extractString(дані_перед, розмір_перед);
-        const callback =
+
+      pristriy_mavky_write_utf8_to_stdout: (
+        color: PristriyMavkyWriteToStdoutColor,
+        data: ptr<char>,
+        size: size_t,
+      ): void => {
+        this.process.print(
+          this.extractString(data, size),
+          Number(color) as TMavkaColor,
+        );
+      },
+
+      pristriy_mavky_double_pow: (value: double, exp: double): double => {
+        return value ** exp;
+      },
+
+      pristriy_mavky_double_sin: (value: double): double => {
+        return Math.sin(value);
+      },
+
+      pristriy_mavky_double_cos: (value: double): double => {
+        return Math.cos(value);
+      },
+
+      pristriy_mavky_double_tan: (value: double): double => {
+        return Math.tan(value);
+      },
+
+      pristriy_mavky_double_asin: (value: double): double => {
+        return Math.asin(value);
+      },
+
+      pristriy_mavky_double_acos: (value: double): double => {
+        return Math.acos(value);
+      },
+
+      pristriy_mavky_double_atan: (value: double): double => {
+        return Math.atan(value);
+      },
+
+      pristriy_mavky_double_abs: (value: double): double => {
+        return Math.abs(value);
+      },
+
+      pristriy_mavky_double_exp: (value: double): double => {
+        return Math.exp(value);
+      },
+
+      pristriy_mavky_double_sqrt: (value: double): double => {
+        return Math.sqrt(value);
+      },
+
+      pristriy_mavky_double_ceil: (value: double): double => {
+        return Math.ceil(value);
+      },
+
+      pristriy_mavky_double_floor: (value: double): double => {
+        return Math.floor(value);
+      },
+
+      pristriy_mavky_double_round: (value: double): double => {
+        return Math.round(value);
+      },
+
+      pristriy_mavky_uint64_to_str: (
+        value: size_t,
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+      ): bool => {
+        return this.handleConversion(value, data_out, size_out) ? TRUE : FALSE;
+      },
+
+      pristriy_mavky_int64_to_str: (
+        value: ssize_t,
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+      ): bool => {
+        return this.handleConversion(value, data_out, size_out) ? TRUE : FALSE;
+      },
+
+      pristriy_mavky_double_to_str: (
+        value: double,
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+        exp_size_out: ptr<ssize_t>,
+      ): bool => {
+        const r = this.handleConversion(value, data_out, size_out);
+        this.storeU64(0n, exp_size_out);
+        return r ? TRUE : FALSE;
+      },
+
+      pristriy_mavky_str_to_double: (
+        data: ptr<char>,
+        size: size_t,
+        out: ptr<double>,
+      ): bool => {
+        const value = this.extractString(data, size)
+          .replaceAll("е", "e")
+          .replaceAll("Е", "E");
+
+        try {
+          this.storeNumber(parseFloat(value), out);
+        } catch (e) {
+          return FALSE;
+        }
+
+        return TRUE;
+      },
+
+      pristriy_mavky_get_cwd: (
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+      ): bool => {
+        const cwd = this.process.getCwd();
+
+        this.storeString(cwd, data_out, size_out);
+
+        return TRUE;
+      },
+
+      pristriy_mavky_get_absolute_path: (
+        path_data: ptr<char>,
+        path_size: size_t,
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+      ): bool => {
+        const path = this.extractString(path_data, path_size);
+        const absPath = this.fs.getAbsolutePath(path);
+
+        this.storeString(absPath, data_out, size_out);
+
+        return TRUE;
+      },
+
+      pristriy_mavky_check_if_file_exists: (
+        path_data: ptr<char>,
+        path_size: size_t,
+      ): bool => {
+        return this.fs.checkIfExistsAndIsFile(
+          this.extractString(path_data, path_size),
+        )
+          ? TRUE
+          : FALSE;
+      },
+
+      pristriy_mavky_read_file: (
+        path_data: ptr<char>,
+        path_size: size_t,
+        data_out: ptr<ptr<char>>,
+        size_out: ptr<size_t>,
+      ): bool => {
+        const path = this.extractString(path_data, path_size);
+
+        const result = this.fs.readFileSync(path);
+        if (result == null) {
+          return FALSE;
+        }
+
+        if (typeof result === "string") {
+          this.storeString(result, data_out, size_out);
+        } else {
+          this.storeBufferPtr(result, data_out);
+          this.storeU64(BigInt(result.byteLength), size_out);
+        }
+
+        return TRUE;
+      },
+
+      pristriy_mavky_read_input_async: (
+        prefix_data: ptr<char>,
+        prefix_size: size_t,
+        callback: ptr<
+          (
+            data: ptr<char>,
+            data_size: size_t,
+            eof: bool,
+            arg: ptr<void>,
+          ) => void
+        >,
+        arg: ptr<void>,
+        allow_history: bool,
+      ): bool => {
+        const prefix = this.extractString(prefix_data, prefix_size);
+
+        const cb =
           this.mapFn<
             (
-              дані: адреса_п8,
-              розмір: природне,
-              кінець_файлу: природне,
-              аргумент: адреса,
+              data: ptr<char>,
+              data_size: size_t,
+              eof: bool,
+              arg: ptr<void>,
             ) => void
-          >(обробник);
+          >(callback);
 
         this.process.readline((value) => {
           if (value != null) {
             const [ptr, size] = this.shareString(value);
-            callback(ptr, size, 0n, аргумент);
+            cb(ptr, size, FALSE, arg);
           } else {
-            callback(0n, 0n, 1n, аргумент);
+            cb(NULL, 0n, TRUE, arg);
           }
         }, prefix);
-      },
-      пристрій_мавки_вивести_ю8: (
-        колір: природне,
-        дані: адреса_п8,
-        розмір: природне,
-      ) => {
-        this.process.print(
-          this.extractString(дані, розмір),
-          Number(колір) as TMavkaColor,
-        );
-      },
-      пристрій_мавки_вивести_шлях: (
-        колір: природне,
-        дані: адреса_п8,
-        розмір: природне,
-      ) => {
-        this.process.print(
-          this.extractString(дані, розмір),
-          Number(колір) as TMavkaColor,
-        );
-      },
-      пристрій_мавки_перетворити_р64_в_ю8: (
-        значення: р64,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-        вихід_розміру_експоненти: адреса_ціле,
-      ) => {
-        return this.handleConversion(значення, вихід_даних, вихід_розміру);
-      },
-      пристрій_мавки_отримати_р64_з_ю8: (дані: адреса_п8, розмір: природне, вихід: адреса_р64): логічне => {
-        const value = this.extractString(дані, розмір).replaceAll("е", "e").replaceAll("Е", "E");
 
-        try {
-          this.storeNumber(parseFloat(value), вихід);
-        } catch (e) {
-          return 0;
-        }
+        return TRUE;
+      },
 
-        return 1;
+      pristriy_mavky_dlopen: (
+        path_data: ptr<char>,
+        path_size: size_t,
+        err_out: ptr<int>,
+      ): ptr<void> => {
+        this.storeInt(-1, err_out);
+        return NULL;
       },
-      пристрій_мавки_перетворити_ц64_в_ю8: (
-        значення: ц64,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-      ) => {
-        return this.handleConversion(значення, вихід_даних, вихід_розміру);
-      },
-      пристрій_мавки_перетворити_п64_в_ю8: (
-        значення: п64,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-      ) => {
-        return this.handleConversion(значення, вихід_даних, вихід_розміру);
-      },
-      пристрій_мавки_піднести_до_степеня_р64: (значення: р64, степінь: р64) => {
-        return значення ** степінь;
-      },
-      пристрій_мавки_вийти: (код_виходу: ц32) => {
-        this.process.exit(код_виходу);
-      },
-      пристрій_мавки_прочитати_файл: (
-        дані_шляху: адреса_п8,
-        розмір_шляху: природне,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-      ) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const result = this.fs.readFileSync(path);
-        if (result == null) {
-          return false;
-        }
-        if (typeof result === "string") {
-          this.storeString(result, вихід_даних, вихід_розміру);
-        } else {
-          this.storeBufferPtr(result, вихід_даних);
-          this.storeU64(BigInt(result.byteLength), вихід_розміру);
-        }
-        return true;
-      },
-      пристрій_мавки_перевірити_чи_шлях_існує_і_є_файлом: (
-        дані_шляху: адреса_п8,
-        розмір_шляху: природне,
-      ) => {
-        return this.fs.checkIfExistsAndIsFile(
-          this.extractString(дані_шляху, розмір_шляху),
-        );
-      },
-      пристрій_мавки_отримати_абсолютний_шлях: (
-        дані_шляху: адреса_п8,
-        розмір_шляху: природне,
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-      ) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const absPath = this.fs.getAbsolutePath(path);
-        this.storeString(absPath, вихід_даних, вихід_розміру);
-        return true;
-      },
-      пристрій_мавки_отримати_поточний_шлях_процесу: (
-        вихід_даних: адреса_адреса_п8,
-        вихід_розміру: адреса_природне,
-      ) => {
-        const cwd = this.process.getCwd();
-        this.storeString(cwd, вихід_даних, вихід_розміру);
-        return true;
-      },
-      бібліотека_мавки_синус_р64: (значення: р64): р64 => { return Math.sin(значення); },
-      бібліотека_мавки_косинус_р64: (значення: р64): р64 => { return Math.cos(значення); },
-      бібліотека_мавки_тангенс_р64: (значення: р64): р64 => { return Math.tan(значення); },
-      бібліотека_мавки_арксинус_р64: (значення: р64): р64 => { return Math.asin(значення); },
-      бібліотека_мавки_арккосинус_р64: (значення: р64): р64 => { return Math.acos(значення); },
-      бібліотека_мавки_арктангенс_р64: (значення: р64): р64 => { return Math.atan(значення); },
-      бібліотека_мавки_абсолютне_р64: (значення: р64): р64 => { return Math.abs(значення); },
-      бібліотека_мавки_експонента_р64: (значення: р64): р64 => { return Math.exp(значення); },
-      бібліотека_мавки_корінь2_р64: (значення: р64): р64 => { return Math.sqrt(значення); },
-      бібліотека_мавки_стеля_р64: (значення: р64): р64 => { return Math.ceil(значення); },
-      бібліотека_мавки_підлога_р64: (значення: р64): р64 => { return Math.floor(значення); },
-      бібліотека_мавки_округлити_р64: (значення: р64): р64 => { return Math.round(значення); },
-      бібліотека_мавки_лог_р64: (значення: р64): р64 => { return Math.log(значення); },
-      бібліотека_мавки_лог2_р64: (значення: р64): р64 => { return Math.log2(значення); },
-      бібліотека_мавки_лог10_р64: (значення: р64): р64 => { return Math.log10(значення); },
-      бібліотека_мавки_афс_видалити: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const callback = this.mapFn<(видалено: природне, помилка: природне, аргумент: адреса) => void>(обробник);
 
-        this.fs.delete(path, (result, error) => {
-          callback(result ? 1n : 0n, BigInt(error), аргумент);
-        });
+      pristriy_mavky_dlsym: (
+        dl: ptr<void>,
+        name_data: ptr<char>,
+        name_size: size_t,
+        err_out: ptr<int>,
+      ): ptr<void> => {
+        this.storeInt(-1, err_out);
+        return NULL;
       },
-      бібліотека_мавки_афс_дописати: (дані_шляху: адреса_п8, розмір_шляху: природне, дані_даних: адреса_п8, розмір_даних: природне, обробник: адреса, аргумент: адреса) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const data = this.extractBytes(дані_даних, розмір_даних);
-        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
 
-        this.fs.append(path, data, (error) => {
-          callback(BigInt(error), аргумент);
-        });
+      pristriy_mavky_dlclose: (dl: ptr<void>): int => {
+        return -1;
       },
-      бібліотека_мавки_афс_записати: (дані_шляху: адреса_п8, розмір_шляху: природне, дані_даних: адреса_п8, розмір_даних: природне, обробник: адреса, аргумент: адреса) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const data = this.extractBytes(дані_даних, розмір_даних);
-        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
 
-        this.fs.write(path, data, (error) => {
-          callback(BigInt(error), аргумент);
-        });
-      },
-      бібліотека_мавки_афс_прочитати: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const callback = this.mapFn<(дані_даних: адреса_п8, розмір_даних: природне, помилка: природне, аргумент: адреса) => void>(обробник);
-
-        this.fs.read(path, (data, error) => {
-          if (error) {
-            callback(0n, 0n, BigInt(error), аргумент);
-          } else {
-            const [ptr, size] = this.shareBytes(data);
-
-            callback(ptr, size, BigInt(error), аргумент);
-          }
-        });
-      },
-      бібліотека_мавки_афс_створити_папку: (дані_шляху: адреса_п8, розмір_шляху: природне, обробник: адреса, аргумент: адреса) => {
-        const path = this.extractString(дані_шляху, розмір_шляху);
-        const callback = this.mapFn<(помилка: природне, аргумент: адреса) => void>(обробник);
-
-        this.fs.mkdir(path, (error) => {
-          callback(BigInt(error), аргумент);
-        });
+      pristriy_mavky_exit: (code: int): void => {
+        this.process.exit(code);
       },
     } as const;
 
@@ -431,13 +473,13 @@ export class MavkaWASM {
   getVersion(): string {
     const versionDataPtrPtr = this.malloc(8n);
     const versionSizePtr = this.malloc(8n);
-    const result = this.getExports().пристрій_мавки_отримати_версію_як_ю8(
+    const result = this.getExports().pristriy_mavky_get_version(
       versionDataPtrPtr,
       versionSizePtr,
     );
     if (!result) {
       throw new Error(
-        `was not able to get mavka version: пристрій_мавки_отримати_версію_як_ю8 returns ${result}`,
+        `was not able to get mavka version: pristriy_mavky_get_version returns ${result}`,
       );
     }
 
@@ -452,7 +494,7 @@ export class MavkaWASM {
     return value;
   }
 
-  run(args: string[]): ц32 {
+  run(args: string[]): int {
     const exports = this.getExports();
 
     const аргументи = args.map((arg) => {

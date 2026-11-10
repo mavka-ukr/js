@@ -28,7 +28,11 @@ const node = {
 
 class NodeMavkaWASM extends MavkaWASM {
   constructor() {
-    super(new NodeMavkaFS(node), new NodeMavkaProcess(node), new NodeMavkaBib(node));
+    super(
+      new NodeMavkaFS(node),
+      new NodeMavkaProcess(node),
+      new NodeMavkaBib(node),
+    );
   }
 }
 
@@ -42,7 +46,7 @@ const mavkaVersion = mavka.getVersion();
 
 if (mavkaVersion != pkg.mavkaVersion) {
   console.warn(
-    "Версія з package.json не співпадає з версією Мавки з WASM файлу!",
+    `Версія з package.json не співпадає з версією Мавки з WASM файлу! ${mavkaVersion} != ${pkg.mavkaVersion}`,
   );
 }
 
